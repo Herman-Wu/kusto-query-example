@@ -1,0 +1,18 @@
+
+//This Kusto query uses StormEvents example table. It uses python to parse JSON instead of using KQL parse_json function. 
+//The purpose is to demo how to create an ad-hoc Kusto function which is mainly written in python.
+let extract_storm_summary = (T:(*), note:string)
+{  
+let kwargs = pack('note', note);
+let code = 
+    'import json\n'
+    'result = df\n'
+    'result["totalDamange"] = result["StormSummary"].apply(lambda x: x["TotalDamages"])\n'
+    'result["location"] =  result["StormSummary"].apply(lambda x: x["Details"]["Location"])\n'
+    'result["notes"] = kargs["note"]+result["State"]\n'
+    '\n'
+   ;
+   T |  evaluate python(typeof(*, totalDamange:string,location:string, notes:string), code,kwargs)
+};
+StormEvents|project EventId,State,StormSummary |limit 10
+| invoke extract_storm_summary('Hello! ')
